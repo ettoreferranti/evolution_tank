@@ -153,11 +153,13 @@ classDiagram
 | Acceleration      | 3.0   | 2.0    | 1.0   |
 | Turn rate (°/s)   | 180   | 120    | 60    |
 | Turret rot (°/s)  | 240   | 180    | 90    |
-| Reload time (s)   | 1.5   | 2.5    | 4.0   |
-| Damage per shot   | 10    | 25     | 50    |
-| Ammo              | 30    | 20     | 10    |
+| Reload time (s)   | 8.0   | 12.0   | 20.0  |
+| Damage per shot   | 20    | 45     | 100   |
+| Ammo              | 20    | 15     | 10    |
 | Visibility range  | 250   | 200    | 150   |
-| Repair time (s)   | 3.0   | 5.0    | 8.0   |
+| Repair time (s)   | 15.0  | 20.0   | 30.0  |
+| Projectile speed  | 10.0  | 8.0    | 6.0   |
+| Projectile range  | 300   | 400    | 500   |
 
 **Damage formula:** `effective_damage = max(0, shot_damage - target_armor)`
 
