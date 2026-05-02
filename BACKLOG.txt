@@ -1,0 +1,245 @@
+================================================================================
+EVOLUTION TANK — FEATURE BACKLOG
+================================================================================
+Last updated: 2026-04-30 (Phase 1 complete)
+
+STATUS KEY:
+  [ ] = To do
+  [~] = In progress
+  [x] = Done
+  [F] = Future development (parked)
+
+PHASE markers indicate suggested implementation order.
+
+================================================================================
+PHASE 1 — FOUNDATION
+================================================================================
+
+[P1-001] [x] Project scaffolding and configuration system
+    - Python package structure
+    - YAML settings file with all configurable parameters
+    - Config loader with defaults and validation
+    - Seeded random number generation for reproducibility
+
+[P1-002] [x] Arena and map system
+    - Rectangular map with configurable size (min/max bounds)
+    - Terrain types: open ground, walls (impassable), mud (slow), road (fast)
+    - Default map presets (selectable via settings)
+    - Map rotation: generations cycle through preset list to prevent overfitting
+    - Map loader/generator
+
+[P1-003] [x] Tank model
+    - Three tank types: light, medium, heavy
+    - Properties per type (all configurable):
+      * HP, armor, speed, acceleration, turn rate
+      * Turret rotation speed, reload time, damage per shot
+      * Ammo capacity, visibility range
+    - Tank state machine: moving, firing, repairing, destroyed
+    - Self-repair mechanic: tank stops, becomes vulnerable, restores HP
+      over configurable time period
+    - Repair is NOT interruptible — once started, must complete or tank
+      is destroyed (sitting duck). Strategy decides whether to risk it.
+
+[P1-004] [x] Physics and movement
+    - 2D position, velocity, heading
+    - Acceleration/deceleration model
+    - Terrain speed modifiers
+    - Tank-tank collision (no damage, just blocking)
+    - Tank-wall collision
+    - Turret rotation independent of hull
+
+[P1-005] [x] Combat system
+    - Projectile model (speed, range, damage — per tank type)
+    - Configurable shell speed per tank type (ballistic leading required)
+    - Line-of-sight check (walls block shots)
+    - Hit detection
+    - Friendly fire enabled
+    - Ammo tracking and depletion
+    - Reload cooldown
+
+[P1-006] [x] Fog of war
+    - Per-tank visibility radius (configurable per type)
+    - Team vision sharing (allies share what they see)
+    - Terrain blocking line of sight (walls)
+    - Sensor data: enemy position, angle, distance, turret direction
+    - No visibility of enemy HP
+
+[P1-007] [x] Match system
+    - Variable team sizes (1–10), configurable
+    - Free-for-all mode
+    - Win condition: last team standing
+    - Time limit with tiebreaker (most damage dealt wins)
+    - Best-of-N matches (N configurable)
+    - Match result recording
+    - Spawn positions: opposite sides of map, ensuring no terrain blockage
+
+[P1-008] [x] Seed strategies and generation 0
+    - Configurable initial population: fully random trees OR
+    - Seed strategies: hand-crafted starting strategies loaded from file
+    - Mix mode: some seeds + random fill
+    - Seed strategies allow reproducing specific scenarios or
+      bootstrapping evolution from known-good starting points
+
+================================================================================
+PHASE 2 — STRATEGY & EVOLUTION
+================================================================================
+
+[P2-001] [x] Strategy representation — behavior trees
+    - Node types: selector, sequence, condition, action
+    - Condition nodes: enemy_visible, health_below, ammo_below,
+      ally_nearby, under_fire, turret_aimed_at_me
+    - Action nodes: move_toward, move_away, patrol, seek_cover,
+      aim_at_nearest, aim_at_weakest_visible, fire, repair,
+      signal_allies, move_to_signal
+    - Numeric parameters on nodes (thresholds, weights, distances)
+    - Serialization/deserialization of behavior trees
+
+[P2-002] [x] Tank communication channel
+    - Simple signal types (e.g., "enemy here", "help", "regroup")
+    - Signal has position and type
+    - Allies within visibility range receive signals
+    - Strategy can react to received signals
+
+[P2-003] [x] Evolution engine — core
+    - Population of strategies per team (default: 100)
+    - Tournament selection
+    - Parameter mutation (gaussian perturbation, configurable sigma)
+    - Crossover (subtree swap between two parent trees)
+    - Elitism (top-K preserved unchanged, K configurable)
+    - Generation counter (default: 100 generations)
+    - All evolution parameters configurable in settings
+
+[P2-007] [x] Team composition evolution
+    - Team composition (which tank types to field) is part of the genome
+    - Strategy genome = behavior tree + composition vector
+    - Composition vector: how many light/medium/heavy (sums to team_size)
+    - Composition mutates alongside behavior: swap a light for a heavy, etc.
+    - Different compositions compete — evolution discovers optimal mixes
+    - Allows emergent archetypes: "all-light swarm", "heavy core + scouts", etc.
+
+[P2-004] [x] Structural mutations
+    - Insert random node into behavior tree
+    - Delete node (promote child)
+    - Swap subtrees between positions
+    - Replace node type
+    - Mutation probability configurable per operation type
+
+[P2-005] [x] Independent team evolution
+    - Each team maintains its own population pool
+    - Teams evolve in parallel but compete against each other
+    - Co-evolutionary dynamics (arms race tracking)
+
+[P2-006] [x] Fitness evaluation
+    - Fitness function components (weighted, configurable):
+      * Win/loss outcome
+      * Damage dealt
+      * Damage taken (negative)
+      * Survival time
+      * Ammo efficiency
+      * Team coordination score
+    - Each strategy plays 3–5 opponents per generation (configurable)
+    - Fitness averaged across all matches for robustness
+
+================================================================================
+PHASE 3 — VISUALIZATION
+================================================================================
+
+[P3-001] [ ] Pygame battle viewer
+    - Real-time 2D rendering of battles
+    - Tank sprites by type (light/medium/heavy)
+    - Turret direction indicator
+    - Projectile visualization
+    - Fog of war overlay (from selected team's perspective)
+    - HP bar per tank
+    - Terrain rendering
+
+[P3-002] [ ] UI overlay
+    - Match score / timer
+    - Generation counter
+    - Team stats
+    - Speed controls (pause, 1x, 2x, 4x, max)
+    - Toggle fog of war: off / Team A perspective / Team B perspective / omniscient
+    - Team perspective toggle (cycle through teams + god view)
+
+================================================================================
+PHASE 4 — ANALYTICS & RESEARCH OUTPUT
+================================================================================
+
+[P4-001] [ ] Fitness tracking
+    - Mean / max / min fitness per generation per team
+    - Fitness curves (exportable as CSV and/or plot)
+
+[P4-002] [ ] Strategy diversity metrics
+    - Genotype distance (tree edit distance between strategies)
+    - Phenotype distance (behavioral similarity in matches)
+    - Diversity over generations
+
+[P4-003] [ ] Dominant trait tracking
+    - Track which parameters stabilize vs. drift
+    - Parameter heatmaps over generations
+
+[P4-004] [ ] Speciation and lineage
+    - Assign lineage IDs to strategies
+    - Track parent-child relationships
+    - Evolutionary tree visualization (exportable)
+    - Species detection (cluster similar strategies)
+
+[P4-005] [ ] Win-rate matrices
+    - Strategy archetype vs. archetype win rates
+    - Heatmap visualization
+
+[P4-006] [ ] Communication analysis
+    - Track signal usage frequency over generations
+    - Detect emergent signaling protocols
+    - Correlation between signal patterns and win rates
+
+[P4-007] [ ] Arms race dynamics
+    - Red Queen effect detection
+    - Fitness oscillation tracking between co-evolving teams
+
+================================================================================
+FUTURE DEVELOPMENT (PARKED)
+================================================================================
+
+[F-001] [ ] Capture the flag game mode
+    - Flag placement, carrying mechanics, scoring
+
+[F-002] [ ] Energy economy
+    - Movement and shooting cost energy
+    - Energy regeneration rate
+    - Adds resource management dimension to strategy
+
+[F-003] [ ] Battle replay system
+    - Record full battle state per tick
+    - Replay viewer with scrubbing
+    - Save/load replay files
+
+[F-004] [ ] Convergence detection
+    - Auto-stop evolution when population fitness plateaus
+    - Configurable convergence threshold and patience
+
+[F-005] [ ] Advanced terrain
+    - Destructible walls
+    - Elevation / hills (affect range, visibility)
+    - Water (impassable or slow)
+
+[F-006] [ ] Ram damage
+    - Collision damage based on relative speed and tank mass
+
+[F-007] [ ] Cloud/multiplayer
+    - Remote spectating
+    - Distributed simulation
+    - Strategy sharing marketplace
+
+[F-008] [ ] Export/import strategies
+    - Save evolved strategies to file
+    - Load and pit strategies from different runs against each other
+
+[F-009] [ ] Signal intelligence & counter-intelligence
+    - Enemies can intercept team signals (eavesdropping)
+    - Bluffing: tanks can send false signals to mislead intercepting enemies
+    - Disinformation: deliberately broadcast wrong positions
+    - Counter-intel: evolve ability to distinguish real vs fake signals
+    - Creates spy vs spy evolutionary arms race
+
+================================================================================

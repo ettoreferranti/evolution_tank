@@ -1,0 +1,214 @@
+# ============================================================================
+# Evolution Tank — Configuration
+# ============================================================================
+# All values here are defaults. Override any subset in a custom YAML file
+# passed via --config flag.
+
+# --- Random seed (for reproducibility; null = random) ---
+seed: null
+
+# ============================================================================
+# Arena
+# ============================================================================
+arena:
+  width: 800          # pixels (min: 400, max: 2000)
+  height: 800         # pixels (min: 400, max: 2000)
+  preset: "default"   # Map preset name. Options: default, open, maze, corridors
+  rotate_presets: true # Cycle through presets across generations to prevent overfitting
+  preset_rotation:     # Order of rotation (loops). Only used when rotate_presets=true
+    - default
+    - open
+    - maze
+    - corridors
+  terrain_types:
+    open:
+      speed_modifier: 1.0
+      passable: true
+      blocks_los: false
+    wall:
+      speed_modifier: 0.0
+      passable: false
+      blocks_los: true
+    mud:
+      speed_modifier: 0.5
+      passable: true
+      blocks_los: false
+    road:
+      speed_modifier: 1.3
+      passable: true
+      blocks_los: false
+
+# ============================================================================
+# Tank Types
+# ============================================================================
+tank_types:
+  light:
+    hp: 50
+    armor: 5
+    speed: 5.0              # units/tick
+    acceleration: 3.0       # units/tick^2
+    turn_rate: 180           # degrees/second
+    turret_rotation_speed: 240  # degrees/second
+    reload_time: 8.0         # seconds
+    damage: 20
+    ammo: 20
+    visibility_range: 250    # pixels
+    repair_time: 15.0        # seconds to full repair (sitting duck while repairing)
+    projectile_speed: 10.0   # units/tick
+    projectile_range: 300    # pixels
+
+  medium:
+    hp: 100
+    armor: 15
+    speed: 3.5
+    acceleration: 2.0
+    turn_rate: 120
+    turret_rotation_speed: 180
+    reload_time: 12.0
+    damage: 45
+    ammo: 15
+    visibility_range: 200
+    repair_time: 20.0
+    projectile_speed: 8.0
+    projectile_range: 400
+
+  heavy:
+    hp: 200
+    armor: 30
+    speed: 2.0
+    acceleration: 1.0
+    turn_rate: 60
+    turret_rotation_speed: 90
+    reload_time: 20.0
+    damage: 100
+    ammo: 10
+    visibility_range: 150
+    repair_time: 30.0
+    projectile_speed: 6.0
+    projectile_range: 500
+
+# ============================================================================
+# Match Settings
+# ============================================================================
+match:
+  team_count: 2             # Number of teams (2+ for team mode, ignored in FFA)
+  team_size: 5              # Tanks per team (1–10)
+  free_for_all: false       # If true, every tank is its own team
+  max_ticks: 36000          # simulation ticks (0 = no limit). At 60 tps, 36000 = 10 min display time
+  best_of: 3                # Number of matches per pairing
+  ticks_per_second: 60      # Simulation speed
+
+  # Spawn settings
+  spawn:
+    side: "opposite"         # "opposite" = teams on opposite sides; "random" = random valid positions
+    min_separation: 30       # Minimum distance between spawn points (pixels)
+    cluster_spread: 50       # How spread out tanks within a team are at spawn
+
+# ============================================================================
+# Fog of War
+# ============================================================================
+fog_of_war:
+  enabled: true
+  share_team_vision: true
+
+# ============================================================================
+# Combat
+# ============================================================================
+combat:
+  friendly_fire: true
+  damage_formula: "max(0, damage - armor)"  # reference only, implemented in code
+
+# ============================================================================
+# Evolution
+# ============================================================================
+evolution:
+  population_size: 100       # Strategies per team population
+  generations: 100           # Total generations to run
+  tournament_size: 5         # k for tournament selection
+  elitism_count: 5           # Top-K preserved unchanged per generation
+  matches_per_strategy: 5    # How many opponents each strategy faces per generation
+  crossover_rate: 0.7        # Probability of crossover vs cloning
+  max_tree_depth: 8          # Prevent bloat in behavior trees
+
+  # Team composition evolution
+  composition:
+    enabled: true             # If true, team composition is part of the genome
+    # If false, uses fixed composition below
+    fixed_composition:        # Only used when composition.enabled = false
+      light: 2
+      medium: 2
+      heavy: 1
+
+  # Initial population seeding
+  initial_population:
+    mode: "random"            # "random", "seeded", or "mix"
+    seed_file: null           # Path to YAML file with seed strategies (for "seeded" or "mix")
+    seed_count: 10            # Number of seeds to use in "mix" mode (rest are random)
+
+  mutation:
+    parameter_rate: 0.3      # Probability of mutating each numeric parameter
+    parameter_sigma: 0.1     # Std dev of gaussian noise (relative to param range)
+    structural_rate: 0.05    # Probability of structural mutation per tree
+    insert_weight: 1.0       # Relative weight for insert mutation
+    delete_weight: 1.0       # Relative weight for delete mutation
+    swap_weight: 0.5         # Relative weight for swap mutation
+    replace_weight: 0.5      # Relative weight for replace mutation
+
+# ============================================================================
+# Fitness
+# ============================================================================
+fitness:
+  weights:
+    win: 10.0                # Points for winning a match
+    damage_dealt: 1.0        # Points per enemy damage dealt
+    friendly_fire: -2.0      # Penalty per friendly fire damage (double penalty)
+    damage_taken: -0.5       # Penalty per damage taken
+    survival_time: 0.1       # Points per second survived
+    ammo_efficiency: 2.0     # Points per hit/shot ratio
+    team_coordination: 1.0   # Points for responding to signals
+
+# ============================================================================
+# Communication
+# ============================================================================
+communication:
+  enabled: true
+  signal_types:
+    - ENEMY_SPOTTED
+    - HELP
+    - REGROUP
+    - ATTACK_HERE
+  signal_range_multiplier: 1.0  # Multiplied by tank's visibility range
+
+# ============================================================================
+# Analytics
+# ============================================================================
+analytics:
+  output_dir: "output"
+  save_fitness_csv: true
+  save_lineage: true
+  save_diversity: true
+  save_win_matrix: true
+  plot_fitness_curves: true
+  log_every_n_generations: 1  # How often to write detailed logs
+
+# ============================================================================
+# Visualization
+# ============================================================================
+visualization:
+  enabled: true
+  window_width: 1024
+  window_height: 768
+  show_fog_of_war: true
+  show_hp_bars: true
+  default_speed: 5           # 1x-10x, default 5x
+  show_every_n_generations: 10  # Only render battles every N generations
+  colors:
+    open: [34, 139, 34]      # forest green
+    wall: [64, 64, 64]       # dark gray
+    mud: [139, 119, 42]      # dark khaki
+    road: [169, 169, 169]    # dark gray
+    team_colors:
+      - [65, 105, 225]       # royal blue
+      - [220, 20, 60]        # crimson
+      - [50, 205, 50]        # lime green
+      - [255, 165, 0]        # orange
