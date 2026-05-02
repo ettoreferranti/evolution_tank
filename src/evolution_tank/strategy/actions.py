@@ -270,11 +270,36 @@ class AimAt(BTNode):
 
 
 class Fire(BTNode):
-    """Set fire=True on the command. Always succeeds."""
+    """Set fire=True on the command if no friendly is in the line of fire."""
+
+    # Half-angle (degrees) of the "danger cone" in front of the turret
+    _FF_CONE_DEG = 15.0
 
     def tick(self, ctx: TickContext) -> NodeStatus:
+        if self._friendly_in_line_of_fire(ctx):
+            return NodeStatus.FAILURE
         ctx.command.fire = True
         return NodeStatus.SUCCESS
+
+    def _friendly_in_line_of_fire(self, ctx: TickContext) -> bool:
+        """Check if any ally is within the turret's firing cone."""
+        if not ctx.sensor.visible_allies:
+            return False
+
+        turret_angle = ctx.tank.turret_angle
+        proj_range = ctx.tank.type_config.projectile_range
+
+        for ally in ctx.sensor.visible_allies:
+            if ally.distance > proj_range:
+                continue
+            # Angle from our position to the ally
+            diff = ally.position - ctx.tank.position
+            angle_to_ally = diff.angle()
+            # Angular difference, wrapped to [-180, 180]
+            delta = (angle_to_ally - turret_angle + 180) % 360 - 180
+            if abs(delta) < self._FF_CONE_DEG:
+                return True
+        return False
 
     def to_dict(self) -> dict[str, Any]:
         return {"type": "fire"}

@@ -116,7 +116,12 @@ def deserialize_tree(data: dict[str, Any]) -> BehaviorTree:
     """Build a BehaviorTree from a serialized dict."""
     root = deserialize_node(data)
     composition = data.get("composition")
-    return BehaviorTree(root=root, composition=composition)
+    lineage_id = data.get("lineage_id")
+    parent_ids = tuple(data.get("parent_ids", ()))
+    return BehaviorTree(
+        root=root, composition=composition,
+        lineage_id=lineage_id, parent_ids=parent_ids,
+    )
 
 
 # ---------------------------------------------------------------------------

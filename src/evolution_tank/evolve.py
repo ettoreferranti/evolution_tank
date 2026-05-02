@@ -6,6 +6,7 @@ import multiprocessing
 import random
 import time
 
+from evolution_tank.analytics import AnalyticsCollector
 from evolution_tank.config import Config
 from evolution_tank.evolution.engine import EvolutionEngine, GenerationResult
 from evolution_tank.strategy.behavior_tree import BehaviorTree
@@ -211,6 +212,7 @@ def run_evolution(config: Config) -> None:
     print("-" * 72, flush=True)
 
     populations = engine.initialize_populations(rng)
+    collector = AnalyticsCollector(config.analytics)
 
     start_time = time.time()
 
@@ -226,6 +228,7 @@ def run_evolution(config: Config) -> None:
             sys.stderr.write("\r" + " " * 40 + "\r")
             sys.stderr.flush()
             _print_generation(gen_result, populations)
+            collector.on_generation(gen_result, populations)
 
             # Show battle replay at configured intervals
             if show_battles and gen % show_every == 0:
@@ -245,6 +248,7 @@ def run_evolution(config: Config) -> None:
         elapsed = time.time() - start_time
         print("-" * 72)
         print(f"Evolution complete in {elapsed:.1f}s")
+        collector.finalize()
 
         # Final best-vs-best replay
         if show_battles:
@@ -255,3 +259,4 @@ def run_evolution(config: Config) -> None:
     except KeyboardInterrupt:
         elapsed = time.time() - start_time
         print(f"\nInterrupted at gen {gen} after {elapsed:.1f}s")
+        collector.finalize()

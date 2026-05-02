@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from typing import TYPE_CHECKING, Any
 
 from evolution_tank.simulation.match import TankCommand
@@ -13,6 +14,20 @@ if TYPE_CHECKING:
     from evolution_tank.simulation.match import StrategyFn
     from evolution_tank.tanks.tank import Tank
 
+# Global lineage ID counter — monotonically increasing across all trees
+_lineage_counter = itertools.count(1)
+
+
+def next_lineage_id() -> int:
+    """Return the next unique lineage ID."""
+    return next(_lineage_counter)
+
+
+def reset_lineage_counter(start: int = 1) -> None:
+    """Reset the counter (for testing reproducibility)."""
+    global _lineage_counter
+    _lineage_counter = itertools.count(start)
+
 
 class BehaviorTree:
     """A complete behavior tree strategy.
@@ -23,9 +38,13 @@ class BehaviorTree:
     """
 
     def __init__(self, root: BTNode,
-                 composition: dict[str, int] | None = None) -> None:
+                 composition: dict[str, int] | None = None,
+                 lineage_id: int | None = None,
+                 parent_ids: tuple[int, ...] = ()) -> None:
         self.root = root
         self.composition = composition  # e.g. {"light": 2, "medium": 2, "heavy": 1}
+        self.lineage_id = lineage_id if lineage_id is not None else next_lineage_id()
+        self.parent_ids = parent_ids
         self.memory = TreeMemory()
 
     def reset(self) -> None:
@@ -69,4 +88,7 @@ class BehaviorTree:
         data = self.root.to_dict()
         if self.composition is not None:
             data["composition"] = dict(self.composition)
+        data["lineage_id"] = self.lineage_id
+        if self.parent_ids:
+            data["parent_ids"] = list(self.parent_ids)
         return data

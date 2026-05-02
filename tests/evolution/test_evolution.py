@@ -21,7 +21,7 @@ from evolution_tank.evolution.mutation import (
 )
 from evolution_tank.evolution.selection import select_next_generation, tournament_select
 from evolution_tank.strategy.actions import AimAt, Fire, MoveToward, Patrol
-from evolution_tank.strategy.behavior_tree import BehaviorTree
+from evolution_tank.strategy.behavior_tree import BehaviorTree, reset_lineage_counter
 from evolution_tank.strategy.composites import SelectorNode, SequenceNode
 from evolution_tank.strategy.conditions import EnemyVisible, HealthBelow, InRange
 from evolution_tank.strategy.nodes import TargetSelector
@@ -345,15 +345,16 @@ class TestTournamentSelect:
 
         # With tournament_size = 10, should always select the best
         rng = random.Random(42)
-        selected = tournament_select(pop, fitnesses, tournament_size=10, rng=rng)
+        selected, parent_id = tournament_select(pop, fitnesses, tournament_size=10, rng=rng)
         assert isinstance(selected, BehaviorTree)
+        assert isinstance(parent_id, int)
 
     def test_returns_deep_copy(self):
         pop = _make_population(5)
         fitnesses = [1.0, 2.0, 3.0, 4.0, 5.0]
 
         rng = random.Random(42)
-        selected = tournament_select(pop, fitnesses, tournament_size=5, rng=rng)
+        selected, _ = tournament_select(pop, fitnesses, tournament_size=5, rng=rng)
 
         # Modifying selected should not affect original
         selected.memory.last_known_enemy_pos = None  # Just verify it's a separate object
@@ -424,7 +425,9 @@ class TestEvolutionEngine:
         config = _fast_config()
         engine = EvolutionEngine(config)
 
+        reset_lineage_counter(1)
         pop1 = engine.initialize_populations(random.Random(42))
+        reset_lineage_counter(1)
         pop2 = engine.initialize_populations(random.Random(42))
 
         for team_id in pop1:
